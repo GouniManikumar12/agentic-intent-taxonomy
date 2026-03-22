@@ -1,0 +1,343 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://admesh.com/schemas/agentic-intent-taxonomy.schema.json",
+  "title": "AdMesh Agentic Intent Taxonomy Decision Envelope",
+  "description": "Draft schema for the AdMesh Agentic Intent Taxonomy with explicit separation between model prediction and system decision.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["model_output", "system_decision"],
+  "properties": {
+    "model_output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["classification"],
+      "properties": {
+        "classification": {
+          "$ref": "#/$defs/modelClassification"
+        },
+        "fallback": {
+          "$ref": "#/$defs/fallback"
+        }
+      }
+    },
+    "system_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["policy", "opportunity"],
+      "properties": {
+        "policy": {
+          "$ref": "#/$defs/policy"
+        },
+        "opportunity": {
+          "$ref": "#/$defs/opportunity"
+        },
+        "intent_trajectory": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/decisionPhase"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "decisionPhase": {
+      "type": "string",
+      "enum": [
+        "awareness",
+        "research",
+        "consideration",
+        "decision",
+        "action",
+        "post_purchase",
+        "support"
+      ]
+    },
+    "iabLevel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label"],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        }
+      }
+    },
+    "iabContent": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["taxonomy_version", "tier1"],
+          "properties": {
+            "taxonomy_version": {
+              "type": "string"
+            },
+            "tier1": {
+              "type": "string"
+            },
+            "tier2": {
+              "type": "string"
+            },
+            "tier3": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["taxonomy", "taxonomy_version", "tier1"],
+          "properties": {
+            "taxonomy": {
+              "type": "string",
+              "const": "IAB Content Taxonomy"
+            },
+            "taxonomy_version": {
+              "type": "string"
+            },
+            "tier1": {
+              "$ref": "#/$defs/iabLevel"
+            },
+            "tier2": {
+              "$ref": "#/$defs/iabLevel"
+            },
+            "tier3": {
+              "$ref": "#/$defs/iabLevel"
+            },
+            "mapping_mode": {
+              "type": "string",
+              "enum": [
+                "exact",
+                "nearest_equivalent",
+                "internal_extension"
+              ]
+            },
+            "mapping_confidence": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        }
+      ]
+    },
+    "intent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "decision_phase"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "informational",
+            "exploratory",
+            "commercial",
+            "transactional",
+            "support",
+            "personal_reflection",
+            "creative_generation",
+            "chit_chat",
+            "ambiguous",
+            "prohibited"
+          ]
+        },
+        "subtype": {
+          "type": "string"
+        },
+        "decision_phase": {
+          "$ref": "#/$defs/decisionPhase"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "commercial_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "summary": {
+          "type": "string",
+          "description": "Optional non-normative human-readable explanation. Systems must not depend on this field for decisioning."
+        }
+      }
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "entities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "constraints": {
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "number",
+              "boolean",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "modelClassification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["intent"],
+      "properties": {
+        "iab_content": {
+          "$ref": "#/$defs/iabContent"
+        },
+        "intent": {
+          "$ref": "#/$defs/intent"
+        },
+        "context": {
+          "$ref": "#/$defs/context"
+        }
+      }
+    },
+    "fallback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "applied",
+        "fallback_intent_type",
+        "fallback_monetization_eligibility",
+        "reason"
+      ],
+      "properties": {
+        "applied": {
+          "type": "boolean"
+        },
+        "fallback_intent_type": {
+          "type": "string",
+          "enum": [
+            "informational",
+            "exploratory",
+            "commercial",
+            "transactional",
+            "support",
+            "personal_reflection",
+            "creative_generation",
+            "chit_chat",
+            "ambiguous",
+            "prohibited"
+          ]
+        },
+        "fallback_monetization_eligibility": {
+          "type": "string",
+          "enum": [
+            "allowed",
+            "allowed_with_caution",
+            "restricted",
+            "not_allowed"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "enum": [
+            "confidence_below_threshold",
+            "insufficient_context",
+            "mapping_failed",
+            "ambiguous_query",
+            "policy_default"
+          ]
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["monetization_eligibility"],
+      "properties": {
+        "monetization_eligibility": {
+          "type": "string",
+          "enum": [
+            "allowed",
+            "allowed_with_caution",
+            "restricted",
+            "not_allowed"
+          ]
+        },
+        "eligibility_reason": {
+          "type": "string"
+        },
+        "decision_basis": {
+          "type": "string",
+          "enum": [
+            "score_threshold",
+            "policy_override",
+            "regulated_vertical_control",
+            "manual_override",
+            "fallback_low_confidence",
+            "fallback_ambiguous_intent"
+          ]
+        },
+        "applied_thresholds": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "commercial_score_min": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "confidence_min": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        },
+        "sensitivity": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "prohibited"
+          ]
+        },
+        "regulated_vertical": {
+          "type": "boolean"
+        }
+      }
+    },
+    "opportunity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "strength"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "none",
+            "soft_recommendation",
+            "comparison_slot",
+            "decision_moment",
+            "transaction_trigger"
+          ]
+        },
+        "strength": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        }
+      }
+    }
+  }
+}
